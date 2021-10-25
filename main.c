@@ -67,6 +67,30 @@ void UART_IntReceive() {
   UART_Receive(LPC_UART0, info, sizeof(info), NONE_BLOCKING);
 }
 
+void TIMER0_IRQHandler() {
+  if (LPC_TIM0->IR & 1) {
+    LPC_GPIO0->FIOCLR = (1 << 8);
+  }
+  else if (LPC_TIM0-> IR & (1 << 1)) {
+    //TODO: por qué este timer prende el adc, y qué se supone que está activando?
+    LPC_ADC->ADCR |= START_NOW;
+    LPC_GPIO0->FIOSET = (1 << 8);
+  }
+
+  // Limpiar banderas de interrupción
+  LPC_TIM0->IR |= 3;
+}
+
+void TIMER1_IRQHandler() {
+  if (LPC_TIM1->IR & 1) 
+    LPC_GPIO0->FIOCLR = (1 << 9);
+  else if (LPC_TIM1->IR & (1 << 1)) 
+    LPC_GPIO0->FIOSET = (1 << 9);
+
+  // Limpio banderas de interrupción
+  LPC_TIM1->IR |= 3;
+}
+
 /*
  * Configuración de periféricos
  */

@@ -1,7 +1,7 @@
 /*
  * Macros y constantes
  */
-// Peripheral Clock
+// Relojes para periféricos
 #define CCLK 1
 #define CCLK_8 3
 // Pin modes
@@ -27,6 +27,7 @@
 #define ADC_PINMODE (NEITHER << P0_23)
 #define AD0_0 (1 << 14)
 #define START_ON_MAT1_0 (7 << 24)
+#define START_NOW (1 << 24)
 
 // Timers
 #define T2_POWER (1 << 22)
@@ -40,7 +41,7 @@
 #define RESET_M0 (1 << 1)
 #define RESET_M1 (1 << 4)
 
-// Messages
+// Mensajes
 #define MSG_CFG_OK_UART "UART cfg OK"
 #define MSG_CFG_OK_PINS "Pins cfg OK"
 #define MSG_CFG_OK_DAC  "DAC cfg OK"
@@ -53,6 +54,8 @@
 
 
 /*
- * Global variables
+ * Variables globales
  */
 uint32_t control = 0;
+// TODO: de qué tamaño tiene que ser este array?
+uint8_t msg[];
