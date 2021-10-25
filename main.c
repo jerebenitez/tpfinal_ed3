@@ -91,6 +91,28 @@ void TIMER1_IRQHandler() {
   LPC_TIM1->IR |= 3;
 }
 
+void TIMER2_IRQHandler() {
+  // El timer2 tiene configurado un solo match, por lo que no hace falta preguntar
+  // cuál interrumpió
+  if (movement == STRAIGHT) {
+    // Si estoy moviendome en linea recta, apago los guiñes y desactivo las IRQs 
+    // de este timer
+    LPC_GIPO2->FIOCLR |= BLINK_RIGHT | BLINK_LEFT;
+    NVIC_DisableIRQ(TIMER2_IRQn);
+  } else {
+    // Si estoy girando en alguna dirección, apago el otro guiñe y toggleo el estado
+    // del que corresponda
+    LPC_GPIO2->FIOCLR |= movement == RIGHT ? BLINK_LEFT : BLINK_RIGHT;
+    if (LPC_GPIO2->FIOPIN & (movement == RIGHT ? BLINK_RIGHT : BLINK_LEFT)) 
+      LPC_GPIO2->FIOCLR |= movement == RIGHT ? BLINK_RIGHT : BLINK_LEFT;
+    else
+      LPC_GPIO2->FIOSET |= movement == RIGHT ? BLINK_RIGHT : BLINK_LEFT;
+  }
+
+  // Limpiar bandera de interrupción
+  LPC_TIM2->IR = 1;
+}
+
 /*
  * Configuración de periféricos
  */

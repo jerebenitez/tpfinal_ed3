@@ -14,7 +14,8 @@
 #define P0_23 14
 #define INTERRUPT_PINS ((1 << 1) | (1 << 6) | (1 << 18))
 #define P0_OUTPUTS ((1 << 8) | (1 << 9) | (1 << 15) | (1 << 17) | (1 << 22))
-
+#define BLINK_RIGHT 1
+#define BLINK_LEFT (1 << 1)
 // DAC
 #define DAC_BIAS_700uA 0
 
@@ -49,9 +50,12 @@
 #define MSG_CFG_OK_INT_GPIO "GPIO Int cfg OK"
 #define MSG_CFG_OK_ADC  "ADC cfg OK"
 #define MSG_CFG_OK_TIMERS "TIMERS cfg OK"
-
 #define MSG_HIGH_BEAM "luz alta"
 
+// Sentidos de movimiento
+#define STRAIGHT 0
+#define RIGHT    1
+#define LEFT     2
 
 /*
  * Variables globales
@@ -59,3 +63,4 @@
 uint32_t control = 0;
 // TODO: de qué tamaño tiene que ser este array?
 uint8_t msg[];
+uint8_t movement = STRAIGHT;
