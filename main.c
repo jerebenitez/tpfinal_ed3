@@ -34,6 +34,9 @@ int main() {
   while(1);
 }
 
+/*
+ * Handlers de interrupciones
+ */
 void ADC_IRQHandler() {
   uint32_t ADC_value;
   LPC_ADC->ADCR &= START_ON_MAT1_0;
@@ -41,6 +44,7 @@ void ADC_IRQHandler() {
   // El resultado se encuentra en los bits [15:4]
   // Para obtenerlo, se corre el registro 4 lugares y se enmascara con 0x3ff
   // para descartar el valor de los demás bits
+  // TODO: revisar por qué ignora los 2 bits menos significativos del valor
   ADC_value = ((LPC_ADC->ADDR0) >> 6) & 0x3ff;
 
   // TODO: Agregar cálculo de donde sale este 930, y agregar macro con el valor
@@ -54,6 +58,13 @@ void ADC_IRQHandler() {
   }
 
   DAC_UpdateValue(LPC_ADC, ADC_value);
+}
+
+void UART_IntReceive() {
+  //TODO: por qué desactiva las interrupciones por EINT3 y cdo las vuelve a activar?
+  NVIC_DisableIRQ(EINT3_IRQn);
+
+  UART_Receive(LPC_UART0, info, sizeof(info), NONE_BLOCKING);
 }
 
 /*
