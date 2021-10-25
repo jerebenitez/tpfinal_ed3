@@ -26,6 +26,7 @@
 #define NO_BURST (1 << 16)
 #define ADC_PINMODE (NEITHER << P0_23)
 #define AD0_0 (1 << 14)
+#define START_ON_MAT1_0 (7 << 24)
 
 // Timers
 #define T2_POWER (1 << 22)
@@ -47,3 +48,11 @@
 #define MSG_CFG_OK_INT_GPIO "GPIO Int cfg OK"
 #define MSG_CFG_OK_ADC  "ADC cfg OK"
 #define MSG_CFG_OK_TIMERS "TIMERS cfg OK"
+
+#define MSG_HIGH_BEAM "luz alta"
+
+
+/*
+ * Global variables
+ */
+uint32_t control = 0;

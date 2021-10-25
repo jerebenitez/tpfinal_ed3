@@ -34,6 +34,28 @@ int main() {
   while(1);
 }
 
+void ADC_IRQHandler() {
+  uint32_t ADC_value;
+  LPC_ADC->ADCR &= START_ON_MAT1_0;
+
+  // El resultado se encuentra en los bits [15:4]
+  // Para obtenerlo, se corre el registro 4 lugares y se enmascara con 0x3ff
+  // para descartar el valor de los demás bits
+  ADC_value = ((LPC_ADC->ADDR0) >> 6) & 0x3ff;
+
+  // TODO: Agregar cálculo de donde sale este 930, y agregar macro con el valor
+  if (ADC_value >= 930) {
+    if (control == 0)
+      UART_Send(LPC_UART0, MSG_HIGH_BEAM, sizeof(MSG_HIGH_BEAM), NONE_BLOCKING);
+
+    control++;
+  } else {
+    control = 0;
+  }
+
+  DAC_UpdateValue(LPC_ADC, ADC_value);
+}
+
 /*
  * Configuración de periféricos
  */
@@ -51,7 +73,7 @@ void configUART() {
 
   // Habilitar interrupciones por Rx
   UART_IntConfig(LPC_UART0, UART_INTCFG_RBR, ENABLE);
-  // Habilita interrupción por estado de línea
+  // Habilitar interrupción por estado de línea
   UART_IntConfig(LPC_UART0, UART_INTCFG_RLS, ENABLE);
 
   // Habilitar transmisión por UART
