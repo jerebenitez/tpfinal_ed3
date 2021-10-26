@@ -94,23 +94,92 @@ void TIMER1_IRQHandler() {
 void TIMER2_IRQHandler() {
   // El timer2 tiene configurado un solo match, por lo que no hace falta preguntar
   // cuál interrumpió
-  if (movement == STRAIGHT) {
-    // Si estoy moviendome en linea recta, apago los guiñes y desactivo las IRQs 
-    // de este timer
-    LPC_GIPO2->FIOCLR |= BLINK_RIGHT | BLINK_LEFT;
-    NVIC_DisableIRQ(TIMER2_IRQn);
-  } else {
-    // Si estoy girando en alguna dirección, apago el otro guiñe y toggleo el estado
-    // del que corresponda
-    LPC_GPIO2->FIOCLR |= movement == RIGHT ? BLINK_LEFT : BLINK_RIGHT;
-    if (LPC_GPIO2->FIOPIN & (movement == RIGHT ? BLINK_RIGHT : BLINK_LEFT)) 
-      LPC_GPIO2->FIOCLR |= movement == RIGHT ? BLINK_RIGHT : BLINK_LEFT;
-    else
-      LPC_GPIO2->FIOSET |= movement == RIGHT ? BLINK_RIGHT : BLINK_LEFT;
-  }
+
+  // Prender o apagar los guiñes según corresponda
+  set_blinkers();
 
   // Limpiar bandera de interrupción
   LPC_TIM2->IR = 1;
+}
+
+void EINT3_IRQHandler() {
+  uint8_t key;
+
+  NVIC_DisableIRQ(EINT3_IRQn);
+  debouncing();
+  key = getKey();
+
+  UART_Send(LPC_UART0, key, sizeof(key), NONE_BLOCKING);
+
+  change_motion(key);
+
+  LPC_GPIOINT->IO0IntClr| = INTERRUPT_PINS;
+  NVIC_EnableIRQ(EINT3_IRQn);
+}
+
+/*
+ * Funciones extra
+ */
+uint8_t get_key() {
+  // TODO: implementar funcion
+  return 2;
+}
+
+void change_motion(enum Movement mov) {
+  movement = mov;
+  
+  switch (mov) {
+    case STRAIGHT:
+      LPC_TIM1->MR0 = 150000;
+      break;
+    case RIGHT:
+      LPC_TIM1->MR0 = 120000;
+      NVIC_EnableIRQ(TIMER2_IRQn);
+      break;
+    case LEFT:
+      LPC_TIM1->MR0 = 180000;
+      NVIC_EnableIRQ(TIMER2_IRQn);
+      break;
+    case STOP:
+      LPC_TIM0->MR0 = 150000;
+      break;
+    case REVERSE:
+      LPC_TIM0->MR0 = 100000;
+      break;
+  }
+}
+
+void set_blinkers() {
+  switch(movement) {
+    case LEFT:
+      // Si estoy girando a la izquierda, apago el guiñe derecho y le hago un toggle al izquierdo
+      LPC_GPIO2->FIOCLR |= BLINK_RIGHT;
+      toggle(BLINK_LEFT);
+      break;
+    case RIGHT:
+      // Si estoy girando a la izquierda, apago el guiñe izquierdo y le hago un toggle al derecho
+      LPC_GPIO2->FIOCLR |= BLINK_LEFT;
+      toggle(BLINK_RIGHT);
+      break;
+    case STRAIGHT:
+    case STOP:
+    case REVERSE:
+      // Si no estoy girando, apago los guiñes
+      LPC_GIPO2->FIOCLR |= BLINK_RIGHT | BLINK_LEFT;
+      NVIC_DisableIRQ(TIMER2_IRQn);
+      break;
+  }
+}
+
+void toggle(uint32_t pin) {
+  if (LPC_GPIO2->FIOPIN & pin) 
+      LPC_GPIO2->FIOCLR |= pin;
+    else
+      LPC_GPIO2->FIOSET |= pin;
+}
+
+void retardo() {
+	for(int i = 0; i < 500000; i++);
 }
 
 /*

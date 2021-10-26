@@ -53,9 +53,13 @@
 #define MSG_HIGH_BEAM "luz alta"
 
 // Sentidos de movimiento
-#define STRAIGHT 0
-#define RIGHT    1
-#define LEFT     2
+enum Movement {
+  STRAIGHT = 2,
+     RIGHT = 6,
+      LEFT = 4,
+      STOP = 5,
+   REVERSE = 8
+};
 
 /*
  * Variables globales
@@ -63,4 +67,13 @@
 uint32_t control = 0;
 // TODO: de qué tamaño tiene que ser este array?
 uint8_t msg[];
-uint8_t movement = STRAIGHT;
+uint8_t movement = STOP;
+
+/*
+ * Prototipos
+ */
+uint8_t get_key();
+void change_motion(enum Movement);
+void set_blinkers();
+void toggle(uint32_t);
+void retardo();
