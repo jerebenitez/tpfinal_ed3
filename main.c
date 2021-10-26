@@ -37,8 +37,19 @@ int main() {
 /*
  * Handlers de interrupciones
  */
+ 
+/*
+ * La rutina del ADC lee el valor de entrada de la LDR y actualiza el valor del DAC según corresponda.
+ * Si se lee un valor alto (930) de luz ambiental, se le pasa al DAC el valor más bajo para generar
+ * una luz de baja intensidad. Si el valor leído es medio (entre 465 y 930), se le pasa un valor medio.
+ * Si el valor es bajo (menor a 465), se prende la luz a la máxima intensidad.
+ *
+ * Además, si es la primera vez que se entró en el estado dado, se envía un msj mediante el módulo UART
+ * para indicar el cambio.
+ */
 void ADC_IRQHandler() {
   uint32_t ADC_value;
+  static uint32_t last_sent = 1;
   LPC_ADC->ADCR &= START_ON_MAT1_0;
 
   // El resultado se encuentra en los bits [15:4]
@@ -48,16 +59,29 @@ void ADC_IRQHandler() {
   ADC_value = ((LPC_ADC->ADDR0) >> 6) & 0x3ff;
 
   // TODO: Agregar cálculo de donde sale este 930, y agregar macro con el valor
-  if (ADC_value >= 930) {
-    if (control == 0)
-      UART_Send(LPC_UART0, MSG_HIGH_BEAM, sizeof(MSG_HIGH_BEAM), NONE_BLOCKING);
-
-    control++;
-  } else {
-    control = 0;
+  // 930 = 3v
+  // 465 = 1.5v
+  if (ADC_value < MEDIUM) {
+    DAC_UpdateValue(LPC_DAC, HIGH);
+    if (last_sent != LOW) {
+      UART_Send(LPC_UART0, MSG_LOW_LIGHT, sizeof(MSG_LOW_LIGHT), NONE_BLOCKING);
+      last_sent = LOW;
+    }
   }
-
-  DAC_UpdateValue(LPC_ADC, ADC_value);
+  else if (ADC_value >= MEDIUM && ADC_value < HIGH) {
+    DAC_UpdateValue(LPC_DAC, MEIDUM);
+    if (last_sent != MEDIUM) {
+      UART_Send(LPC_UART0, MSG_MEDIUM_LIGHT, sizeof(MSG_MEDIUM_LIGHT), NONE_BLOCKING);
+      last_sent = MEDIUM;
+    }
+  }
+  else if (ADC_value >= HIGH) {
+    DAC_UpdateValue(LPC_DAC, LOW);
+    if (last_sent != HIGH) {
+      UART_Send(LPC_UART0, MSG_HIGH_LIGHT, sizeof(MSG_HIGH_LIGHT), NONE_BLOCKING);
+      last_sent = HIGH;
+    }
+  }
 }
 
 void UART_IntReceive() {
@@ -67,6 +91,11 @@ void UART_IntReceive() {
   UART_Receive(LPC_UART0, info, sizeof(info), NONE_BLOCKING);
 }
 
+/*
+ * Esta rutina genera una señal PWM de período 20 ms y ciclo de trabajo variable según el valor
+ * cargado en los registros de match correspondientes, para modificar el sentido de giro de los
+ * motores.
+ */
 void TIMER0_IRQHandler() {
   if (LPC_TIM0->IR & 1) {
     LPC_GPIO0->FIOCLR = (1 << 8);
@@ -81,6 +110,11 @@ void TIMER0_IRQHandler() {
   LPC_TIM0->IR |= 3;
 }
 
+/*
+ * Esta rutina genera una señal PWM de período 20 ms y ciclo de trabajo variable según el valor
+ * cargado en los registros de match correspondientes, para modificar el sentido de giro de los
+ * motores.
+ */
 void TIMER1_IRQHandler() {
   if (LPC_TIM1->IR & 1) 
     LPC_GPIO0->FIOCLR = (1 << 9);
@@ -91,6 +125,10 @@ void TIMER1_IRQHandler() {
   LPC_TIM1->IR |= 3;
 }
 
+/*
+ * Esta rutina genera una señal que conmuta cada medio segundo para generar la intermitencia
+ * de los guiñes que correspondan.
+ */
 void TIMER2_IRQHandler() {
   // El timer2 tiene configurado un solo match, por lo que no hace falta preguntar
   // cuál interrumpió
@@ -102,6 +140,12 @@ void TIMER2_IRQHandler() {
   LPC_TIM2->IR = 1;
 }
 
+/*
+ * Esta función lee la tecla del teclado matricial presionada, y cambia el sentido de giro del
+ * motor que corresponda, modificando los valores de los registros de match según lo calculado.
+ * Antes de hacer esto, notifica por UART el cambio de estado del sistema, notificando la tecla
+ * leída.
+ */
 void EINT3_IRQHandler() {
   uint8_t key;
 
@@ -179,7 +223,7 @@ void toggle(uint32_t pin) {
 }
 
 void retardo() {
-	for(int i = 0; i < 500000; i++);
+  for(int i = 0; i < 500000; i++);
 }
 
 /*

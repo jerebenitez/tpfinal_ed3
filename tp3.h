@@ -50,7 +50,9 @@
 #define MSG_CFG_OK_INT_GPIO "GPIO Int cfg OK"
 #define MSG_CFG_OK_ADC  "ADC cfg OK"
 #define MSG_CFG_OK_TIMERS "TIMERS cfg OK"
-#define MSG_HIGH_BEAM "luz alta"
+#define MSG_HIGH_LIGHT "LUZ BAJA"
+#define MSG_HIGH_LIGHT "LUZ MEDIA"
+#define MSG_HIGH_LIGHT "LUZ ALTA"
 
 // Sentidos de movimiento
 enum Movement {
@@ -61,10 +63,14 @@ enum Movement {
    REVERSE = 8
 };
 
+// Valores de ADC
+#define LOW     0
+#define MEDIUM  465
+#define HIGH    930
+
 /*
  * Variables globales
  */
-uint32_t control = 0;
 // TODO: de qué tamaño tiene que ser este array?
 uint8_t msg[];
 uint8_t movement = STOP;
